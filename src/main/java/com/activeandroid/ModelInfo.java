@@ -37,176 +37,178 @@ import com.activeandroid.serializer.TypeSerializer;
 import com.activeandroid.serializer.UtilDateSerializer;
 import com.activeandroid.util.AALog;
 import com.activeandroid.util.ReflectionUtils;
+
 import dalvik.system.DexFile;
 
 final class ModelInfo {
-	//////////////////////////////////////////////////////////////////////////////////////
-	// PRIVATE METHODS
-	//////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE METHODS
+    //////////////////////////////////////////////////////////////////////////////////////
 
-	private Map<Class<? extends IModel>, TableInfo> mTableInfos = new HashMap<Class<? extends IModel>, TableInfo>();
-	private Map<Class<?>, TypeSerializer> mTypeSerializers = new HashMap<Class<?>, TypeSerializer>() {
-		{
-			put(Calendar.class, new CalendarSerializer());
-			put(java.sql.Date.class, new SqlDateSerializer());
-			put(java.util.Date.class, new UtilDateSerializer());
-		}
-	};
+    private Map<Class<? extends IModel>, TableInfo> mTableInfos = new HashMap<Class<? extends IModel>, TableInfo>();
+    private Map<Class<?>, TypeSerializer> mTypeSerializers = new HashMap<Class<?>, TypeSerializer>() {
+        {
+            put(Calendar.class, new CalendarSerializer());
+            put(java.sql.Date.class, new SqlDateSerializer());
+            put(java.util.Date.class, new UtilDateSerializer());
+        }
+    };
 
-	//////////////////////////////////////////////////////////////////////////////////////
-	// CONSTRUCTORS
-	//////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+    // CONSTRUCTORS
+    //////////////////////////////////////////////////////////////////////////////////////
 
-	public ModelInfo(Configuration configuration) {
-		if (!loadModelFromMetaData(configuration)) {
-			try {
-				scanForModel(configuration.getContext());
-			}
-			catch (IOException e) {
-				AALog.e("Couldn't open source path.", e);
-			}
-		}
+    public ModelInfo(Configuration configuration) {
+        if (!loadModelFromMetaData(configuration)) {
+            try {
+                scanForModel(configuration.getContext());
+            } catch (IOException e) {
+                AALog.e("Couldn't open source path.", e);
+            }
+        }
 
-		AALog.i("ModelInfo loaded.");
-	}
+        AALog.i("ModelInfo loaded.");
+    }
 
-	//////////////////////////////////////////////////////////////////////////////////////
-	// PUBLIC METHODS
-	//////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+    // PUBLIC METHODS
+    //////////////////////////////////////////////////////////////////////////////////////
 
-	public Collection<TableInfo> getTableInfos() {
-		return mTableInfos.values();
-	}
+    public Collection<TableInfo> getTableInfos() {
+        return mTableInfos.values();
+    }
 
-	public TableInfo getTableInfo(Class<? extends IModel> type) {
-		return mTableInfos.get(type);
-	}
+    public TableInfo getTableInfo(Class<? extends IModel> type) {
+        return mTableInfos.get(type);
+    }
 
-	public TypeSerializer getTypeSerializer(Class<?> type) {
-		return mTypeSerializers.get(type);
-	}
+    public TypeSerializer getTypeSerializer(Class<?> type) {
+        return mTypeSerializers.get(type);
+    }
 
-	//////////////////////////////////////////////////////////////////////////////////////
-	// PRIVATE METHODS
-	//////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////
+    // PRIVATE METHODS
+    //////////////////////////////////////////////////////////////////////////////////////
 
-	private boolean loadModelFromMetaData(Configuration configuration) {
-		if (!configuration.isValid()) {
-			return false;
-		}
+    private boolean loadModelFromMetaData(Configuration configuration) {
+        if (!configuration.isValid()) {
+            return false;
+        }
 
-		final List<Class<? extends IModel>> models = configuration.getModelClasses();
-		if (models != null) {
-			for (Class<? extends IModel> IModel : models) {
-				mTableInfos.put(IModel, new TableInfo(IModel));
-			}
-		}
+        final List<Class<? extends IModel>> models = configuration.getModelClasses();
+        if (models != null) {
+            for (Class<? extends IModel> IModel : models) {
+                mTableInfos.put(IModel, new TableInfo(IModel));
+            }
+        }
 
-		final List<Class<? extends TypeSerializer>> typeSerializers = configuration.getTypeSerializers();
-		if (typeSerializers != null) {
-			for (Class<? extends TypeSerializer> typeSerializer : typeSerializers) {
-				try {
-					TypeSerializer instance = typeSerializer.newInstance();
-					mTypeSerializers.put(instance.getDeserializedType(), instance);
-				}
-				catch (InstantiationException e) {
-					AALog.e("Couldn't instantiate TypeSerializer.", e);
-				}
-				catch (IllegalAccessException e) {
-					AALog.e("IllegalAccessException", e);
-				}
-			}
-		}
+        final List<Class<? extends TypeSerializer>> typeSerializers = configuration.getTypeSerializers();
+        if (typeSerializers != null) {
+            for (Class<? extends TypeSerializer> typeSerializer : typeSerializers) {
+                try {
+                    TypeSerializer instance = typeSerializer.newInstance();
+                    mTypeSerializers.put(instance.getDeserializedType(), instance);
+                } catch (InstantiationException e) {
+                    AALog.e("Couldn't instantiate TypeSerializer.", e);
+                } catch (IllegalAccessException e) {
+                    AALog.e("IllegalAccessException", e);
+                }
+            }
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	private void scanForModel(Context context) throws IOException {
-		String packageName = context.getPackageName();
-		String sourcePath = context.getApplicationInfo().sourceDir;
-		List<String> paths = new ArrayList<String>();
+    private void scanForModel(Context context) throws IOException {
+        String packageName = context.getPackageName();
+        String sourcePath = context.getApplicationInfo().sourceDir;
+        List<String> paths = new ArrayList<String>();
 
-		if (sourcePath != null && !(new File(sourcePath).isDirectory())) {
-			DexFile dexfile = new DexFile(sourcePath);
-			Enumeration<String> entries = dexfile.entries();
+        if (sourcePath != null && !(new File(sourcePath).isDirectory())) {
+            DexFile dexfile = new DexFile(sourcePath);
+            Enumeration<String> entries = dexfile.entries();
 
-			while (entries.hasMoreElements()) {
-				paths.add(entries.nextElement());
-			}
-		}
-		// Robolectric fallback
-		else {
-			ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-			Enumeration<URL> resources = classLoader.getResources("");
+            while (entries.hasMoreElements()) {
+                String path = entries.nextElement();
+                boolean success = false;
+                for (String modelPath : ModelPathManager.getPaths()) {
+                    if (path.startsWith(modelPath)) {
+                        success = true;
+                        break;
+                    }
+                }
+                if (success) {
+                    paths.add(path);
+                }
+            }
+        }
+        // Robolectric fallback
+        else {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            Enumeration<URL> resources = classLoader.getResources("");
 
-			while (resources.hasMoreElements()) {
-				String path = resources.nextElement().getFile();
-				if (path.contains("bin") || path.contains("classes")) {
-					paths.add(path);
-				}
-			}
-		}
+            while (resources.hasMoreElements()) {
+                String path = resources.nextElement().getFile();
+                if (path.contains("bin") || path.contains("classes")) {
+                    paths.add(path);
+                }
+            }
+        }
 
-		for (String path : paths) {
-			File file = new File(path);
-			scanForModelClasses(file, packageName, context.getClass().getClassLoader());
-		}
-	}
+        for (String path : paths) {
+            File file = new File(path);
+            scanForModelClasses(file, packageName, context.getClass().getClassLoader());
+        }
+    }
 
-	private void scanForModelClasses(File path, String packageName, ClassLoader classLoader) {
-		if (path.isDirectory()) {
-			for (File file : path.listFiles()) {
-				scanForModelClasses(file, packageName, classLoader);
-			}
-		}
-		else {
-			String className = path.getName();
+    private void scanForModelClasses(File path, String packageName, ClassLoader classLoader) {
+        if (path.isDirectory()) {
+            for (File file : path.listFiles()) {
+                scanForModelClasses(file, packageName, classLoader);
+            }
+        } else {
+            String className = path.getName();
 
-			// Robolectric fallback
-			if (!path.getPath().equals(className)) {
-				className = path.getPath();
+            // Robolectric fallback
+            if (!path.getPath().equals(className)) {
+                className = path.getPath();
 
-				if (className.endsWith(".class")) {
-					className = className.substring(0, className.length() - 6);
-				}
-				else {
-					return;
-				}
+                if (className.endsWith(".class")) {
+                    className = className.substring(0, className.length() - 6);
+                } else {
+                    return;
+                }
 
-				className = className.replace("/", ".");
+                className = className.replace("/", ".");
 
-				int packageNameIndex = className.lastIndexOf(packageName);
-				if (packageNameIndex < 0) {
-					return;
-				}
+                int packageNameIndex = className.lastIndexOf(packageName);
+                if (packageNameIndex < 0) {
+                    return;
+                }
 
-				className = className.substring(packageNameIndex);
-			}
+                className = className.substring(packageNameIndex);
+            }
 
-			try {
-				Class<?> discoveredClass = Class.forName(className, false, classLoader);
-				if (!Modifier.isAbstract(discoveredClass.getModifiers())
+            try {
+                Class<?> discoveredClass = Class.forName(className, false, classLoader);
+                if (!Modifier.isAbstract(discoveredClass.getModifiers())
                         && !discoveredClass.equals(IModel.class)
                         && ReflectionUtils.isModel(discoveredClass)
                         && !discoveredClass.isAnnotationPresent(Ignore.class)) {
-					@SuppressWarnings("unchecked")
-					Class<? extends IModel> modelClass = (Class<? extends IModel>) discoveredClass;
-					mTableInfos.put(modelClass, new TableInfo(modelClass));
-				}
-				else if (ReflectionUtils.isTypeSerializer(discoveredClass) && !discoveredClass.isAnnotationPresent(Ignore.class)) {
-					TypeSerializer instance = (TypeSerializer) discoveredClass.newInstance();
-					mTypeSerializers.put(instance.getDeserializedType(), instance);
-				}
-			}
-			catch (ClassNotFoundException e) {
-				AALog.e("Couldn't create class.", e);
-			}
-			catch (InstantiationException e) {
-				AALog.e("Couldn't instantiate TypeSerializer.", e);
-			}
-			catch (IllegalAccessException e) {
-				AALog.e("IllegalAccessException", e);
-			}
-		}
-	}
+                    @SuppressWarnings("unchecked")
+                    Class<? extends IModel> modelClass = (Class<? extends IModel>) discoveredClass;
+                    mTableInfos.put(modelClass, new TableInfo(modelClass));
+                } else if (ReflectionUtils.isTypeSerializer(discoveredClass) && !discoveredClass.isAnnotationPresent(Ignore.class)) {
+                    TypeSerializer instance = (TypeSerializer) discoveredClass.newInstance();
+                    mTypeSerializers.put(instance.getDeserializedType(), instance);
+                }
+            } catch (ClassNotFoundException e) {
+                AALog.e("Couldn't create class.", e);
+            } catch (InstantiationException e) {
+                AALog.e("Couldn't instantiate TypeSerializer.", e);
+            } catch (IllegalAccessException e) {
+                AALog.e("IllegalAccessException", e);
+            }
+        }
+    }
 }

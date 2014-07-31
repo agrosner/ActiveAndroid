@@ -27,8 +27,11 @@ public final class ActiveAndroid {
 	//////////////////////////////////////////////////////////////////////////////////////
 
 	public static void initialize(Context context) {
+        //add app package name for searching by default
+        ModelPathManager.addPath(context.getPackageName());
+
 		initialize(new Configuration.Builder(context).create());
-	}
+    }
 
 	public static void initialize(Configuration configuration) {
 		initialize(configuration, false);
