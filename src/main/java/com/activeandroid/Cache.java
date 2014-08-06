@@ -41,9 +41,13 @@ public final class Cache {
 	private static ModelInfo sIModelInfo;
 	private static DatabaseHelper sDatabaseHelper;
 
+    private static Configuration sDatabaseConfiguration;
+
 	private static LruCache<String, IModel> sEntities;
 
 	private static boolean sIsInitialized = false;
+
+    private static boolean isUpgrading = false;
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	// CONSTRUCTORS
@@ -62,6 +66,7 @@ public final class Cache {
 			return;
 		}
 
+        sDatabaseConfiguration = configuration;
 		sContext = configuration.getContext();
 		sIModelInfo = new ModelInfo(configuration);
 		sDatabaseHelper = new DatabaseHelper(configuration);
@@ -152,4 +157,14 @@ public final class Cache {
 	public static synchronized String getTableName(Class<? extends IModel> type) {
 		return sIModelInfo.getTableInfo(type).getTableName();
 	}
+
+    public static void reset(Context context) {
+        if(!isUpgrading) {
+            sIsInitialized = false;
+            isUpgrading = true;
+            context.deleteDatabase(sDatabaseConfiguration.getDatabaseName());
+            initialize(sDatabaseConfiguration, sDatabaseHelper.mListener);
+            isUpgrading = false;
+        }
+    }
 }

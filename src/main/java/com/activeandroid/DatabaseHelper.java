@@ -42,7 +42,7 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
 
 	public final static String MIGRATION_PATH = "migrations";
 
-    private DatabaseHelperListener mListener;
+    DatabaseHelperListener mListener;
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	// CONSTRUCTORS

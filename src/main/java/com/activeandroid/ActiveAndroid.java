@@ -71,6 +71,10 @@ public final class ActiveAndroid {
 		Cache.dispose();
 	}
 
+    public static void reset(Context context){
+        Cache.reset(context);
+    }
+
 	public static void setLoggingEnabled(boolean enabled) {
 		AALog.setEnabled(enabled);
 	}
