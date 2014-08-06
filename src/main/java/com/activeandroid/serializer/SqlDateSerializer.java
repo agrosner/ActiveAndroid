@@ -18,7 +18,7 @@ package com.activeandroid.serializer;
 
 import java.sql.Date;
 
-public final class SqlDateSerializer extends TypeSerializer {
+public final class SqlDateSerializer extends TypeSerializer<Date> {
 	public Class<?> getDeserializedType() {
 		return Date.class;
 	}
@@ -27,14 +27,16 @@ public final class SqlDateSerializer extends TypeSerializer {
 		return long.class;
 	}
 
-	public Long serialize(Object data) {
+    @Override
+	public Long serialize(Date data) {
 		if (data == null) {
 			return null;
 		}
 
-		return ((Date) data).getTime();
+		return data.getTime();
 	}
 
+    @Override
 	public Date deserialize(Object data) {
 		if (data == null) {
 			return null;
