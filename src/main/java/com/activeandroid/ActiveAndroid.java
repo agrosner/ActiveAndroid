@@ -26,26 +26,42 @@ public final class ActiveAndroid {
 	// PUBLIC METHODS
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	public static void initialize(Context context) {
+	public static void initialize(Context context, DatabaseHelperListener databaseHelperListener) {
         //add app package name for searching by default
         ModelPathManager.addPath(context.getPackageName());
 
-		initialize(new Configuration.Builder(context).create());
+		initialize(new Configuration.Builder(context).create(), databaseHelperListener);
     }
 
-	public static void initialize(Configuration configuration) {
-		initialize(configuration, false);
+    public static void initialize(Context context) {
+        initialize(context, null);
+    }
+
+	public static void initialize(Configuration configuration, DatabaseHelperListener databaseHelperListener) {
+		initialize(configuration, false, databaseHelperListener);
 	}
 
-	public static void initialize(Context context, boolean loggingEnabled) {
-		initialize(new Configuration.Builder(context).create(), loggingEnabled);
+    public static void initialize(Configuration configuration) {
+        initialize(configuration, null);
+    }
+
+	public static void initialize(Context context, boolean loggingEnabled, DatabaseHelperListener databaseHelperListener) {
+		initialize(new Configuration.Builder(context).create(), loggingEnabled,databaseHelperListener);
 	}
 
-	public static void initialize(Configuration configuration, boolean loggingEnabled) {
+    public static void initialize(Context context, boolean loggingEnabled) {
+        initialize(context, loggingEnabled,null);
+    }
+
+	public static void initialize(Configuration configuration, boolean loggingEnabled, DatabaseHelperListener databaseHelperListener) {
 		// Set logging enabled first
 		setLoggingEnabled(loggingEnabled);
-		Cache.initialize(configuration);
+		Cache.initialize(configuration, databaseHelperListener);
 	}
+
+    public static void initialize(Configuration configuration, boolean loggingEnabled) {
+        initialize(configuration, loggingEnabled,null);
+    }
 
 	public static void clearCache() {
 		Cache.clear();

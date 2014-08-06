@@ -56,7 +56,7 @@ public final class Cache {
 	// PUBLIC METHODS
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	public static synchronized void initialize(Configuration configuration) {
+	public static synchronized void initialize(Configuration configuration, DatabaseHelperListener databaseHelperListener) {
 		if (sIsInitialized) {
 			AALog.v("ActiveAndroid already initialized.");
 			return;
@@ -65,6 +65,7 @@ public final class Cache {
 		sContext = configuration.getContext();
 		sIModelInfo = new ModelInfo(configuration);
 		sDatabaseHelper = new DatabaseHelper(configuration);
+        sDatabaseHelper.setListener(databaseHelperListener);
 
 		// TODO: It would be nice to override sizeOf here and calculate the memory
 		// actually used, however at this point it seems like the reflection
