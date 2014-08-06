@@ -18,7 +18,7 @@ package com.activeandroid.serializer;
 
 import java.util.Calendar;
 
-public final class CalendarSerializer extends TypeSerializer {
+public final class CalendarSerializer extends TypeSerializer<Calendar> {
 	public Class<?> getDeserializedType() {
 		return Calendar.class;
 	}
@@ -27,10 +27,12 @@ public final class CalendarSerializer extends TypeSerializer {
 		return long.class;
 	}
 
-	public Long serialize(Object data) {
-		return ((Calendar) data).getTimeInMillis();
+    @Override
+	public Long serialize(Calendar data) {
+		return data.getTimeInMillis();
 	}
 
+    @Override
 	public Calendar deserialize(Object data) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTimeInMillis((Long) data);
