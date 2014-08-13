@@ -25,6 +25,11 @@ public class DBBatchSaveQueue extends Thread{
      */
     private static final int sMODEL_SAVE_SIZE = 50;
 
+    /**
+     * Tells how many items to save at a time. This can be set using {@link #setModelSaveSize(int)}
+     */
+    private int mModelSaveSize = sMODEL_SAVE_SIZE;
+
     private boolean mQuit = false;
 
     public static DBBatchSaveQueue getSharedSaveQueue(){
@@ -44,6 +49,16 @@ public class DBBatchSaveQueue extends Thread{
         super("DBBatchSaveQueue");
 
         mModels = new ArrayList<IModel>();
+    }
+
+    /**
+     * Sets how many models to save at a time in this queue.
+     * Increase it for larger batches, but slower recovery time.
+     * Smaller the batch, the more time it takes to save overall.
+     * @param mModelSaveSize
+     */
+    public void setModelSaveSize(int mModelSaveSize) {
+        this.mModelSaveSize = mModelSaveSize;
     }
 
     @Override
@@ -97,7 +112,7 @@ public class DBBatchSaveQueue extends Thread{
         synchronized (mModels){
             mModels.add(IModel);
 
-            if(mModels.size()>sMODEL_SAVE_SIZE){
+            if(mModels.size()>mModelSaveSize){
                 interrupt();
             }
         }
@@ -107,7 +122,7 @@ public class DBBatchSaveQueue extends Thread{
         synchronized (mModels){
             mModels.addAll(list);
 
-            if(mModels.size()>sMODEL_SAVE_SIZE){
+            if(mModels.size()>mModelSaveSize){
                 interrupt();
             }
         }
