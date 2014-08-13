@@ -24,7 +24,7 @@ public final class UtilDateSerializer extends TypeSerializer<Date> {
 	}
 
 	public Class<?> getSerializedType() {
-		return long.class;
+		return Long.class;
 	}
 
     @Override
