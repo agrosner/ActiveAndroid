@@ -18,23 +18,25 @@ package com.activeandroid.serializer;
 
 import java.util.Date;
 
-public final class UtilDateSerializer extends TypeSerializer {
+public final class UtilDateSerializer extends TypeSerializer<Date> {
 	public Class<?> getDeserializedType() {
 		return Date.class;
 	}
 
 	public Class<?> getSerializedType() {
-		return long.class;
+		return Long.class;
 	}
 
-	public Long serialize(Object data) {
+    @Override
+	public Long serialize(Date data) {
 		if (data == null) {
 			return null;
 		}
 
-		return ((Date) data).getTime();
+		return data.getTime();
 	}
 
+    @Override
 	public Date deserialize(Object data) {
 		if (data == null) {
 			return null;

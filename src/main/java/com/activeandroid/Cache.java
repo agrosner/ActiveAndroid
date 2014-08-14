@@ -41,9 +41,13 @@ public final class Cache {
 	private static ModelInfo sIModelInfo;
 	private static DatabaseHelper sDatabaseHelper;
 
+    private static Configuration sDatabaseConfiguration;
+
 	private static LruCache<String, IModel> sEntities;
 
 	private static boolean sIsInitialized = false;
+
+    private static boolean isUpgrading = false;
 
 	//////////////////////////////////////////////////////////////////////////////////////
 	// CONSTRUCTORS
@@ -56,15 +60,17 @@ public final class Cache {
 	// PUBLIC METHODS
 	//////////////////////////////////////////////////////////////////////////////////////
 
-	public static synchronized void initialize(Configuration configuration) {
+	public static synchronized void initialize(Configuration configuration, DatabaseHelperListener databaseHelperListener) {
 		if (sIsInitialized) {
 			AALog.v("ActiveAndroid already initialized.");
 			return;
 		}
 
+        sDatabaseConfiguration = configuration;
 		sContext = configuration.getContext();
 		sIModelInfo = new ModelInfo(configuration);
 		sDatabaseHelper = new DatabaseHelper(configuration);
+        sDatabaseHelper.setListener(databaseHelperListener);
 
 		// TODO: It would be nice to override sizeOf here and calculate the memory
 		// actually used, however at this point it seems like the reflection
@@ -151,4 +157,14 @@ public final class Cache {
 	public static synchronized String getTableName(Class<? extends IModel> type) {
 		return sIModelInfo.getTableInfo(type).getTableName();
 	}
+
+    public static void reset(Context context) {
+        if(!isUpgrading) {
+            sIsInitialized = false;
+            isUpgrading = true;
+            context.deleteDatabase(sDatabaseConfiguration.getDatabaseName());
+            initialize(sDatabaseConfiguration, sDatabaseHelper.mListener);
+            isUpgrading = false;
+        }
+    }
 }

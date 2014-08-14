@@ -42,6 +42,8 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
 
 	public final static String MIGRATION_PATH = "migrations";
 
+    DatabaseHelperListener mListener;
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	// CONSTRUCTORS
 	//////////////////////////////////////////////////////////////////////////////////////
@@ -51,17 +53,27 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
 		copyAttachedDatabase(configuration.getContext(), configuration.getDatabaseName());
 	}
 
+    public void setListener(DatabaseHelperListener listener){
+        mListener = listener;
+    }
+
 	//////////////////////////////////////////////////////////////////////////////////////
 	// OVERRIDEN METHODS
 	//////////////////////////////////////////////////////////////////////////////////////
 
 	@Override
 	public void onOpen(SQLiteDatabase db) {
+        if(mListener!=null){
+            mListener.onOpen(db);
+        }
 		executePragmas(db);
 	};
 
 	@Override
 	public void onCreate(SQLiteDatabase db) {
+        if(mListener!=null){
+            mListener.onCreate(db);
+        }
 		executePragmas(db);
 		executeCreate(db);
 		executeMigrations(db, -1, db.getVersion());
@@ -69,6 +81,9 @@ public final class DatabaseHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if(mListener!=null){
+            mListener.onUpgrade(db, oldVersion, newVersion);
+        }
 		executePragmas(db);
 		executeCreate(db);
 		executeMigrations(db, oldVersion, newVersion);
